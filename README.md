@@ -15,6 +15,10 @@ Secpad is an encrypted collaborative real-time editor, providing security agains
 
 > It is encouraged, to open your browsers js-console, to notice errors. 
 
+> Remember: `nodejs` and `npm` are required to run this project! (see below)
+
+---------
+
 # A really-real time collaborative word processor for the web
 ![alt text](http://i.imgur.com/zYrGkg3.gif "Etherpad in action on PrimaryPad")
 
