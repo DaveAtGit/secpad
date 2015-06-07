@@ -4,7 +4,7 @@ Secpad is an encrypted collaborative real-time editor, providing security agains
 
 ## WARNING!
 
-> This project is currently not secure nor stable! See the [issues](https://github.com/DaveAtGit/secpad/issues) for more information.
+> This project is currently neither secure nor stable! See the [issues](https://github.com/DaveAtGit/secpad/issues) for more information.
 
 ## Only way to get it to run:
 
