@@ -6,16 +6,17 @@ Secpad is an encrypted collaborative real-time editor, providing security agains
 
 > This project is currently neither secure nor stable! See the [issues](https://github.com/DaveAtGit/secpad/issues) for more information.
 
-## Only way to get it to run:
+## Only way to get it to work:
 
 - User A loads pad (/p/padname)
 - User A writes something and deletes it (or everything for that matters)
 - User B only then starts to connect to the same pad (/p/padname)
 - User A and User B may now start writing.
 
-> It is encouraged, to open your browsers js-console, to notice errors. 
+> It is recommend, to open the browsers js-console, so errors can be noted, as there is no feedback for the user yet.
 
-> Remember: `nodejs` and `npm` are required to run this project! (see below)
+> Remember: `nodejs` and `npm` are required to run this project (see below; no pre-builds available)!
+> To use SSL/TLS, there is a **development-only** script in `.keys` to generate the required keys.
 
 ---------
 
