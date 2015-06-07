@@ -1,14 +1,10 @@
 # Secpad
 
-Secpad is an encrypted collaborative real-time editor, providing security against untrusted servers and similar attackers. It aims to secure your Data.
-
-<span style="color: #A00">
+Secpad is an encrypted collaborative real-time editor, providing security against untrusted servers and similar attackers. It aims to secure your data.
 
 ## WARNING!
 
 > This project is currently not secure nor stable! See the [issues](https://github.com/DaveAtGit/secpad/issues) for more information.
-
-</span>
 
 ## Only way to get it to run:
 
