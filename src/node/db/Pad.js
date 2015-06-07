@@ -34,7 +34,10 @@ exports.cleanText = function (txt) {
 
 var Pad = function Pad(id) {
 
-  this.atext = Changeset.makeAText("\n");
+  this.atext = Changeset.makeAText("\n"); // DAVE will always be \n... just easier, than to remove atext.
+  //this.keys = [];	// DAVE symmkeys. The publickeys are used for identification, the symmkeys are encrypted.
+  //this.users = [];	// DAVE user_pks. See above. We cannot use an associative array, as the pks are objects.
+  this.keys = {};	// DAVE pk changed to base64 -> we can use them as identifiers.
   this.pool = new AttributePool();
   this.head = -1;
   this.chatHead = -1;
@@ -45,6 +48,25 @@ var Pad = function Pad(id) {
 };
 
 exports.Pad = Pad;
+
+Pad.prototype.addUser = function(user_pk, symmkey) {
+	this.keys[user_pk] = symmkey;
+	//this.keys.push(symmkey);
+	//this.keys.push(user_pk);
+};
+
+Pad.prototype.getUser = function(user_pk) {
+	if (user_pk in this.keys)
+		return this.keys[user_pk];
+	return null;
+	/*
+	var i = this.users.indexOf(user_pk);
+	if (i >= 0)
+		return this.keys[i];
+	else
+		return null;
+	*/
+};
 
 Pad.prototype.apool = function apool() {
   return this.pool;
@@ -77,7 +99,9 @@ Pad.prototype.appendRevision = function appendRevision(aChangeset, author) {
   if(!author)
     author = '';
 
-  var newAText = Changeset.applyToAText(aChangeset, this.atext, this.pool);
+  //var newAText = Changeset.applyToAText(aChangeset, this.atext, this.pool);
+  // DAVE this should be handled better!
+  var newAText = {text: "\n", attribs: "|1+1"};
   Changeset.copyAText(newAText, this.atext);
 
   var newRev = ++this.head;
@@ -414,8 +438,8 @@ Pad.prototype.init = function init(text, callback) {
     //this pad doesn't exist, so create it
     else
     {
-      var firstChangeset = Changeset.makeSplice("\n", 0, 0, exports.cleanText(text));
-
+      //var firstChangeset = Changeset.makeSplice("\n", 0, 0, exports.cleanText(text));
+	  var firstChangeset = { text: "", attribs: "" };
       _this.appendRevision(firstChangeset, '');
     }
 

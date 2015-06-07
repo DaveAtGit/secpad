@@ -867,7 +867,9 @@ exports.applyZip = function (in1, idx1, in2, idx2, func) {
  * @params cs {string} String encoded Changeset
  * @returns {Changeset} a Changeset class
  */
+var crypto = require('./crypto');
 exports.unpack = function (cs) {
+  cs = crypto.decrypt(cs);
   var headerRegex = /Z:([0-9a-z]+)([><])([0-9a-z]+)|/;
   var headerMatch = headerRegex.exec(cs);
   if ((!headerMatch) || (!headerMatch[0])) {
@@ -901,7 +903,7 @@ exports.pack = function (oldLen, newLen, opsStr, bank) {
   var lenDiffStr = (lenDiff >= 0 ? '>' + exports.numToString(lenDiff) : '<' + exports.numToString(-lenDiff));
   var a = [];
   a.push('Z:', exports.numToString(oldLen), lenDiffStr, opsStr, '$', bank);
-  return a.join('');
+  return crypto.encrypt(a.join(''));
 };
 
 /**
@@ -911,6 +913,7 @@ exports.pack = function (oldLen, newLen, opsStr, bank) {
  */
 exports.applyToText = function (cs, str) {
   var unpacked = exports.unpack(cs);
+  //console.log(unpacked); // DAVE ...
   exports.assert(str.length == unpacked.oldLen, "mismatched apply: ", str.length, " / ", unpacked.oldLen);
   var csIter = exports.opIterator(unpacked.ops);
   var bankIter = exports.stringIterator(unpacked.charBank);

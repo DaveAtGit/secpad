@@ -1,0 +1,66 @@
+{
+  "name": "libsodium-wrappers",
+  "version": "0.2.7",
+  "description": "The Sodium cryptographic library compiled to pure JavaScript (wrappers)",
+  "main": "dist/modules/libsodium-wrappers.js",
+  "files": [
+    "dist/modules/libsodium-wrappers.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jedisct1/libsodium.js.git"
+  },
+  "dependencies": {
+    "libsodium": "0.2.7"
+  },
+  "keywords": [
+    "crypto",
+    "sodium",
+    "libsodium",
+    "nacl",
+    "chacha20",
+    "poly1305",
+    "curve25519",
+    "ed25519",
+    "blake2",
+    "siphash"
+  ],
+  "author": {
+    "name": "Ahmad Ben Mrad",
+    "url": "@BatikhSouri"
+  },
+  "contributors": [
+    {
+      "name": "Frank Denis",
+      "url": "@jedisct1"
+    }
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jedisct1/libsodium.js/issues"
+  },
+  "homepage": "https://github.com/jedisct1/libsodium.js",
+  "gitHead": "2fbe83d8f6982c33d0b5a37fddf4875570eaf6c9",
+  "_id": "libsodium-wrappers@0.2.7",
+  "scripts": {},
+  "_shasum": "2d061184f0f420e39b6bab7b8ef24666f3092e38",
+  "_from": "libsodium-wrappers@*",
+  "_npmVersion": "2.9.0",
+  "_nodeVersion": "2.0.0",
+  "_npmUser": {
+    "name": "jedisct1",
+    "email": "npm@pureftpd.org"
+  },
+  "maintainers": [
+    {
+      "name": "jedisct1",
+      "email": "npm@pureftpd.org"
+    }
+  ],
+  "dist": {
+    "shasum": "2d061184f0f420e39b6bab7b8ef24666f3092e38",
+    "tarball": "http://registry.npmjs.org/libsodium-wrappers/-/libsodium-wrappers-0.2.7.tgz"
+  },
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/libsodium-wrappers/-/libsodium-wrappers-0.2.7.tgz"
+}

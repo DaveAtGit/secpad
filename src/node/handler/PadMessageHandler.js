@@ -52,6 +52,21 @@ var remoteAddress = require("../utils/RemoteAddress").remoteAddress;
 var sessioninfos = {};
 exports.sessioninfos = sessioninfos;
 
+/** // DAVE
+ * The clients, currently connected and already in possession of the symmkey.
+ * This simplyfies the search for another client, who shall encrypt the
+ * symmetric key for a new user.
+ * When a publickey gets known, the user will be added. On a disconnect,
+ * he will be removed.
+ *
+ * { padId: {pk: client, ...}, ... }
+ */
+var active_users = {};
+var _getKeyPerValue = function(obj, value) {
+	// http://stackoverflow.com/a/9907887/2395605
+	return Object.keys(obj).filter(function(k) { obj[k] === value })[0];
+};
+
 // Measure total amount of users
 stats.gauge('totalUsers', function() {
   return Object.keys(socketio.sockets.sockets).length
@@ -162,6 +177,10 @@ exports.handleDisconnect = function(client)
       // Allow plugins to hook into users leaving the pad
       hooks.callAll("userLeave", session);
     });
+	// DAVE
+	// We have to remove the client from the known/connected users.
+	delete active_users[session.padId][_getKeyPerValue(active_users[session.padId], client)];
+	//active_users[session.padId].splice(active_users[session.padId].indexOf(client), 1);
   }
 
   //Delete the sessioninfos entrys of this session
@@ -208,7 +227,16 @@ exports.handleMessage = function(client, message)
 
   var finalHandler = function () {
     //Check what type of message we get and delegate to the other methodes
-    if(message.type == "CLIENT_READY") {
+	if (message.type == "CRYPTO_SYMMKEY_NEW") {
+		// DAVE client sends us his symmkey
+		handleClientSymmkeyReceive(client, message);
+	} else if (message.type == "CRYPTO_PUBLICKEY") {
+		// DAVE client sends us his publickey
+		handleClientPublickeyReceive(client, message);
+	} else if (message.type == "CRYPTO_SYMMKEY_FOR") {
+		// DAVE client sends us a symmkey (for another user)
+		handleClientSymmkeyReceive(client, message);
+	} else if(message.type == "CLIENT_READY") {
       handleClientReady(client, message);
     } else if(message.type == "CHANGESET_REQ") {
       handleChangesetRequest(client, message);
@@ -295,6 +323,88 @@ exports.handleMessage = function(client, message)
   }
 }
 
+/**
+ * Handles the recieved new symmetrical key by the client.
+ * This happens either on creation of the pad or on
+ * @param client    the client that send this message
+ * @param message   the message from the client
+ */
+function handleClientSymmkeyReceive(client, message) {
+	var padId = sessioninfos[client.id].padId;	// is this possible?
+	var sk = message.data.symmkey;
+	var pk = message.data.publickey;
+	padManager.getPad(padId, function(err, pad) {
+		if (ERR(err)) return;
+
+		if (pad.getUser(pk) != null) {
+			ERR("Pad '"+padId+"': The given user is already known.");
+			return;
+		}
+
+		pad.addUser(pk, sk);
+		console.log("Client '"+client.id+"': Added symmkey to pad '"+padId+"'.");
+		// if pk != this clients pk, send to respective client a SYMMKEY_STORE!
+		if (padId in active_users && pk != _getKeyPerValue(active_users[padId], client)) {
+			active_users[padId][pk].json.send({component: "pad", type: "CRYPTO_SYMMKEY_STORE", data: {padId: padId, symmkey: sk}});
+		}
+	});
+
+	// Short: if (!(padId in active_users)) { active_users[padId] = {}; active_users[padId][pk] = client; }
+	// TODO should be in getPad-callback
+	if (!(padId in active_users))
+		active_users[padId] = {};
+	if (!(pk in active_users[padId]))
+		active_users[padId][pk] = client;
+	//if (!(padId in active_users))
+	//	active_users[padId] = [];
+	//if (active_users[padId].indexOf(client) < 0)
+	//	active_users[padId].push(client);
+}
+
+/**
+ * Handles the received public key of the client.
+ * This case occurs, if the user connects and has to
+ * get his symmetric key, which we either already know,
+ * or another user has to encrypt for him.
+ * @param client    the client that send this message
+ * @param message   the message from the client
+ */
+function handleClientPublickeyReceive(client, message) {
+	var padId = sessioninfos[client.id].padId;	// is this possible?
+	var pk = message.data;
+	console.log("Client '"+client.id+"': Received publickey");
+	padManager.getPad(padId, function(err, pad) {
+		if (ERR(err)) return;
+
+		if (pad.getUser(pk) != null) {
+			// The user is known and already has a symmkey.
+			// Send it to him:
+			console.log("Client '"+client.id+":' [PK]: Already known.");
+			client.json.send({component: "pad", type: "CRYPTO_SYMMKEY_STORE", data: {padId: padId, symmkey: pad.getUser(pk)}});
+			// We are done here.
+		} else {
+			// The user has not been a participent of the pad yet.
+			// The fun part begins: We have to search for another online user, to ask
+			// him to give us the symmkey (encrypted of course)...
+			/*This would be an option, but the current solution seams easier and with less overhead/clutter
+			 *in the networking part.
+			 * client.broadcast.to(padId).json.send({type: "CRYPTO_PUBLICKEY", data: { padId: padId, reason: "search"}});
+			 */
+			if (!(padId in active_users) || Object.keys(active_users[padId]).length == 0) {
+				// lost. As there is no other user, this user cannot be given an encrypted symmkey.
+				// He/She has to retry, when another user is online.
+				ERR("Pad '"+padId+"': There is no other user");
+			}
+			// We just ask the first one. If his connection is, he might disconnect anyway.
+			console.log("Client '"+client.id+":' [PK]: Asking for help.");
+			var users = active_users[padId];
+			var cl = users[Object.keys(users)[0]];
+			active_users[padId][pk] = client;
+			cl.json.send({component: "pad", type: "CRYPTO_SYMMKEY_FOR", data: {padId: padId, publickey: pk}});
+			// We assume, this worked. Otherwise we would have to send a lot back-and-forth or send the client-object with it.
+		}
+	});
+}
 
 /**
  * Handles a save revision message
@@ -638,6 +748,8 @@ function handleUserChanges(data, cb)
     {
       //ex. _checkChangesetAndPool
 
+	  // DAVE what a surprise: it cannot verify the changeset. well. the server has to trust US!
+	  /*
       try
       {
         // Verify that the changeset has valid syntax and is in canonical form
@@ -662,7 +774,7 @@ function handleUserChanges(data, cb)
           //- can have attribs, but they are discarded and don't show up in the attribs - but do show up in the  pool
 
           op.attribs.split('*').forEach(function(attr) {
-            if(!attr) return
+            if(!attr) return 
             attr = wireApool.getAttrib(attr)
             if(!attr) return
             //the empty author is used in the clearAuthorship functionality so this should be the only exception
@@ -681,7 +793,7 @@ function handleUserChanges(data, cb)
         client.json.send({disconnect:"badChangeset"});
         stats.meter('failedChangesets').mark();
         return callback(new Error("Can't apply USER_CHANGES, because "+e.message));
-      }
+      }*/
 
       //ex. applyUserChanges
       apool = pad.pool;
@@ -738,12 +850,15 @@ function handleUserChanges(data, cb)
     {
       var prevText = pad.text();
 
+	  /*
+	  // DAVE it tries to open the changeset... it fails.
       if (Changeset.oldLen(changeset) != prevText.length)
       {
         client.json.send({disconnect:"badChangeset"});
         stats.meter('failedChangesets').mark();
         return callback(new Error("Can't apply USER_CHANGES "+changeset+" with oldLen " + Changeset.oldLen(changeset) + " to document of length " + prevText.length));
       }
+	  */
 
       try
       {
@@ -1128,9 +1243,17 @@ function handleClientReady(client, message)
 
       if(pad.head > 0) {
         accessLogger.info('[ENTER] Pad "'+padIds.padId+'": Client '+client.id+' with IP "'+ip+'" entered the pad');
+		// DAVE We don't know, if the client already knows this pad or is new to it, so we ask him/her for his/her
+		//      publickey. If it exists in the pad, we can return him/her his/her symmetrical key. If not, we have
+		//      to look for another user, who can encrypt the symmetrical key for this client.
+		//      The lookup and decision is done in #handleClientPublickeyReceive.
+		client.json.send({component: "pad", type: "CRYPTO_PUBLICKEY", data: padIds.padId});
       }
       else if(pad.head == 0) {
         accessLogger.info('[CREATE] Pad "'+padIds.padId+'": Client '+client.id+' with IP "'+ip+'" created the pad');
+		// DAVE As this is a new pad, there is no symmetrical key existent. So we ask the client to be the one,
+		//      who creates it. It will be encrypted and stored. See #handleClientSymmkeyReceive.
+		client.json.send({component: "pad", type: "CRYPTO_SYMMKEY_NEW", data: padIds.padId});
       }
 
       //If this is a reconnect, we don't have to send the client the ClientVars again

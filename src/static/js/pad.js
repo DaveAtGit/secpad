@@ -31,6 +31,8 @@ require('./farbtastic');
 require('./excanvas');
 JSON = require('./json2');
 
+var crypto = require('./crypto');
+
 var chat = require('./chat').chat;
 var getCollabClient = require('./collab_client').getCollabClient;
 var padconnectionstatus = require('./pad_connectionstatus').padconnectionstatus;
@@ -305,6 +307,51 @@ function handshake()
       }
     }
     
+	// DAVE we can look for our own message-types here.
+	else if (obj.type == "CRYPTO_SYMMKEY_NEW") {
+		// This user seems to be the one to create the pad.
+		// The encrypted symmetric key has to be send to
+		// the server (incl. the publickey for storage).
+		console.log("> Preparing new symmetrical key for pad '"+obj.data+"'.");
+		var pk = crypto.publickey();
+		var enc_key = crypto.prepare_symmkey(obj.data, pk); 
+		console.log("  Key to deliver: "+JSON.stringify(enc_key));
+		socket.json.send({component: "pad", type: "CRYPTO_SYMMKEY_NEW", data: { symmkey: enc_key, publickey: pk}});
+	}
+	else if (obj.type == "CRYPTO_SYMMKEY_FOR") {
+		// This user is asked to encrypt the symmetric key for
+		// another user (given).
+		// This is nearly the same, as CRYPTO_SYMMKEY_NEW, but
+		// for clarification, it is handled extra.
+		var pid = obj.data.padId;
+		var pk = obj.data.publickey;
+		console.log("> Preparing symmetrical key for pad '"+pid+"' for another user.");
+		var enc_key = crypto.prepare_symmkey(pid, pk);
+		console.log("  Key to deliver: "+JSON.stringify(enc_key));
+		socket.json.send({component: "pad", type: "CRYPTO_SYMMKEY_FOR", data: { symmkey: enc_key, publickey: pk}});
+	}
+	else if (obj.type == "CRYPTO_SYMMKEY_STORE") {
+		// The server sends the symmetric key, which is encrypted
+		// for this user and has to be used for further actions on
+		// this pad.
+		var pid = obj.data.padId;
+		var sk = obj.data.symmkey;
+		console.log("> Storing symmetrical key for pad '"+pid+"'.");
+		crypto.store_symmkey(pid, sk);
+	}
+	else if (obj.type == "CRYPTO_PUBLICKEY") {
+		// The server asks for the publickey (most likely to look,
+		// whether this user is already a participant of the pad).
+		console.log("> Sending publickey for pad '"+obj.data+"'.");
+		var pk = crypto.publickey();
+		//var pk = {};
+		//for (var i = 0; i < pk_o.length; ++i) {
+		//	pk[i] = pk_o[i];
+		//}
+		console.log("  Publickey to deliver: "+JSON.stringify(pk));
+		socket.json.send({component: "pad", type: "CRYPTO_PUBLICKEY", data: pk});
+	}
+
     //if we haven't recieved the clientVars yet, then this message should it be
     else if (!receivedClientVars && obj.type == "CLIENT_VARS")
     {
@@ -380,6 +427,7 @@ function handshake()
       }
       else
       {
+		// DAVE this one is the other interesting part :)
         pad.collabClient.handleMessageFromServer(obj);
       }
     }

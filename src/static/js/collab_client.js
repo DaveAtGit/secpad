@@ -181,6 +181,7 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
     }
 
     var sentMessage = false;
+	// DAVE changesettracker.js packs the changeset...
     var userChangesData = editor.prepareUserChangeset();
     if (userChangesData.changeset)
     {
@@ -217,6 +218,8 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
 
   function sendMessage(msg)
   {
+    // DAVE del log msg
+    console.log("Sending msg: " + JSON.stringify(msg));
     getSocket().json.send(
     {
       type: "COLLABROOM",
