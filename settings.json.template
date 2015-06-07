@@ -5,7 +5,7 @@
 */
 {
   // Name your instance!
-  "title": "Etherpad",
+  "title": "Secpad",
 
   // favicon default name
   // alternatively, set up a fully specified Url to your own favicon
@@ -21,14 +21,14 @@
   //
   // make sure to have the minimum and correct file access permissions set
   // so that the Etherpad server can access them
-
+  */
   "ssl" : {
-            "key"  : "/path-to-your/epl-server.key",
-            "cert" : "/path-to-your/epl-server.crt"
-            "ca": ["/path-to-your/epl-intermediate-cert1.crt", "/path-to-your/epl-intermediate-cert2.crt"]
+            "key"  : ".keys/epl-server.key",
+            "cert" : ".keys/epl-server.crt",
+            "ca": [".keys/own-ca.crt"]
           },
 
-  */
+  /**/
 
   //The Type of the database. You can choose between dirty, postgres, sqlite and mysql
   //You shouldn't use "dirty" for for anything else than testing or development
@@ -49,7 +49,7 @@
   */
 
   //the default text of a pad
-  "defaultPadText" : "Welcome to Etherpad!\n\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\n\nGet involved with Etherpad at http:\/\/etherpad.org\n",
+  "defaultPadText" : "\n",
 
   /* Default Pad behavior, users can override by changing */
   "padOptions": {

@@ -1,3 +1,24 @@
+# Secpad
+
+Secpad is an encrypted collaborative real-time editor, providing security against untrusted servers and similar attackers. It aims to secure your Data.
+
+<span style="color: #A00">
+
+## WARNING!
+
+> This project is currently not secure nor stable! See the [issues](https://github.com/DaveAtGit/secpad/issues) for more information.
+
+</span>
+
+## Only way to get it to run:
+
+- User A loads pad (/p/padname)
+- User A writes something and deletes it (or everything for that matters)
+- User B only then starts to connect to the same pad (/p/padname)
+- User A and User B may now start writing.
+
+> It is encouraged, to open your browsers js-console, to notice errors. 
+
 # A really-real time collaborative word processor for the web
 ![alt text](http://i.imgur.com/zYrGkg3.gif "Etherpad in action on PrimaryPad")
 

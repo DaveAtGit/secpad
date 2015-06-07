@@ -32,7 +32,6 @@ var sodium = require('./libsodium/libsodium-wrappers');
  * drawback: the global window can be accessed by anyone on the
  * clientside.
  */
-
 if (typeof window == "undefined") {
 	// There is still Changeset-usage on server-side. Even though
 	// that should be deleted, this is a faster workaround...
@@ -42,6 +41,7 @@ if (typeof window == "undefined") {
 	console.log(":: window is defined");
 	var global = window.top;
 }
+
 
 /* asymmetric keys */
 var get_keys = function() {
@@ -95,15 +95,15 @@ var _get_pad = function(padId) {
  * https://download.libsodium.org/doc/public-key_cryptography/sealed_boxes.html
  *
  * Process:
- * >> encrypt:
+ * >> prepare:
  * - decrypt own symmetrical key
  * - anonymously encrypt symm-key for other party
  *   - the pk might be encoded as base64
  *   - the symmkey will be encoded as base64
  * - send
- * << decrypt:
+ * << store:
  * - receive
- * - decrypt for usage
+ * - (decrypt for usage)
  * - not necessary to re-encrypt, as it is only decryptable by this user
  */
 
@@ -151,7 +151,7 @@ exports.encrypt = function (padId, msg) {
 		padId = null;
 	}
 	padId = _get_pad(padId);
-	console.log("> Encrypting for pad '"+padId+"'.");
+	//console.log("> Encrypting for pad '"+padId+"'.");
 
 	var sk = get_symmetric_key(padId);
 	return sodium.crypto_secretbox_easy(msg,
@@ -165,7 +165,7 @@ exports.decrypt = function (padId, cypher) {
 		padId = null;
 	}
 	padId = _get_pad(padId);
-	console.log("> Decrypting for pad '"+padId+"'.");
+	//console.log("> Decrypting for pad '"+padId+"'.");
 
 	var sk = get_symmetric_key(padId);
 	return sodium.crypto_secretbox_open_easy(sodium.from_base64(cypher),
